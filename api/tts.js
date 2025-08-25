@@ -2,14 +2,18 @@ import axios from "axios";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Método não permitido. Use POST." });
   }
 
   try {
-    const { text, voice = "UZ8QqWVrz7tMdxiglcLh" } = req.body;
-    if (!text) return res.status(400).json({ error: "O campo 'text' é obrigatório" });
+    const { text, voice = "UZ8QqWVrz7tMdxiglcLh" } = req.body; // Livia como padrão
+    if (!text) {
+      return res.status(400).json({ error: "O campo 'text' é obrigatório." });
+    }
 
-    const r = await axios.post(
+    const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
+
+    const response = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
       {
         text,
@@ -18,7 +22,7 @@ export default async function handler(req, res) {
       },
       {
         headers: {
-          "xi-api-key": process.env.ELEVENLABS_API_KEY,
+          "xi-api-key": ELEVEN_API_KEY,
           "Content-Type": "application/json",
           "Accept": "audio/mpeg"
         },
@@ -27,9 +31,10 @@ export default async function handler(req, res) {
     );
 
     res.setHeader("Content-Type", "audio/mpeg");
-    res.send(r.data);
-  } catch (e) {
-    console.error(e?.response?.data || e.message);
-    res.status(500).json({ error: "Erro ao gerar voz" });
+    return res.send(response.data);
+
+  } catch (error) {
+    console.error(error?.response?.data || error.message);
+    return res.status(500).json({ error: "Erro ao gerar voz com ElevenLabs." });
   }
 }
